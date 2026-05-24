@@ -1,81 +1,168 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import * as XLSX from 'xlsx'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer
+} from 'recharts'
+
 export default function Home() {
-  const profissionais = [
-    { nome: 'RAPHAEL BUENO DA SILVA', equipe: 'PARK', vendas: 25 },
-    { nome: 'JOSYENE FREITAS', equipe: 'PARK', vendas: 21 },
-    { nome: 'FRANCISCO RODRIGUES', equipe: 'EXTERNA', vendas: 23 },
-    { nome: 'IGOR SENNA', equipe: 'EXTERNA', vendas: 17 }
-  ]
+  const [dados, setDados] = useState([])
+  const [ranking, setRanking] = useState([])
+
+  useEffect(() => {
+    async function carregarExcel() {
+      const response = await fetch('/TES%202.xlsx')
+      const arrayBuffer = await response.arrayBuffer()
+
+      const workbook = XLSX.read(arrayBuffer)
+      const sheet = workbook.Sheets[workbook.SheetNames[0]]
+
+      const json = XLSX.utils.sheet_to_json(sheet)
+
+      setDados(json)
+
+      const profissionais = {}
+
+      json.forEach((item) => {
+        const nome = item.PROFISSIONAL || 'SEM NOME'
+
+        if (!profissionais[nome]) {
+          profissionais[nome] = 0
+        }
+
+        profissionais[nome] += 1
+      })
+
+      const rankingArray = Object.entries(profissionais).map(
+        ([nome, vendas]) => ({
+          nome,
+          vendas
+        })
+      )
+
+      rankingArray.sort((a, b) => b.vendas - a.vendas)
+
+      setRanking(rankingArray)
+    }
+
+    carregarExcel()
+  }, [])
 
   return (
-    <main style={{ padding: 30 }}>
-      <div style={{
-        background: 'white',
-        padding: 24,
-        borderRadius: 20,
-        marginBottom: 20,
-        boxShadow: '0 2px 10px rgba(0,0,0,0.08)'
-      }}>
-        <h1 style={{ fontSize: 40, marginBottom: 10 }}>
-          Dashboard Comercial
+    <main style={{ padding: 30, background: '#f3f4f6', minHeight: '100vh' }}>
+      <div
+        style={{
+          background: 'white',
+          padding: 24,
+          borderRadius: 20,
+          marginBottom: 20
+        }}
+      >
+        <h1 style={{ fontSize: 42 }}>
+          Dashboard BI Comercial
         </h1>
 
         <p style={{ color: '#666' }}>
-          Sistema BI de captação, vendas e cancelamentos
+          Sistema inteligente conectado ao Excel
         </p>
       </div>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: 20,
-        marginBottom: 20
-      }}>
-        {[
-          ['Total de Casais', '274'],
-          ['Cotas Ativas', '198'],
-          ['Cancelamentos', '76'],
-          ['Eficiência', '72%']
-        ].map((item, i) => (
-          <div key={i} style={{
-            background: 'white',
-            padding: 20,
-            borderRadius: 20,
-            boxShadow: '0 2px 10px rgba(0,0,0,0.08)'
-          }}>
-            <p style={{ color: '#666' }}>{item[0]}</p>
-            <h2 style={{ fontSize: 34 }}>{item[1]}</h2>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))',
+          gap: 20,
+          marginBottom: 20
+        }}
+      >
+        <Card titulo="Total Registros" valor={dados.length} />
+        <Card titulo="Profissionais" valor={ranking.length} />
+        <Card titulo="Top Vendas" valor={ranking[0]?.vendas || 0} />
+        <Card
+          titulo="Eficiência"
+          valor={`${Math.round(
+            ((ranking[0]?.vendas || 0) / (dados.length || 1)) * 100
+          )}%`}
+        />
+      </div>
+
+      <div
+        style={{
+          background: 'white',
+          padding: 24,
+          borderRadius: 20,
+          marginBottom: 20
+        }}
+      >
+        <h2 style={{ marginBottom: 20 }}>
+          Ranking de Profissionais
+        </h2>
+
+        {ranking.slice(0, 10).map((p, i) => (
+          <div
+            key={i}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              padding: 14,
+              background: '#f9fafb',
+              borderRadius: 12,
+              marginBottom: 10
+            }}
+          >
+            <strong>{p.nome}</strong>
+
+            <strong>{p.vendas}</strong>
           </div>
         ))}
       </div>
 
-      <div style={{
-        background: 'white',
-        padding: 24,
-        borderRadius: 20,
-        boxShadow: '0 2px 10px rgba(0,0,0,0.08)'
-      }}>
-        <h2 style={{ marginBottom: 20 }}>Ranking de Profissionais</h2>
+      <div
+        style={{
+          background: 'white',
+          padding: 24,
+          borderRadius: 20
+        }}
+      >
+        <h2 style={{ marginBottom: 20 }}>
+          Gráfico de Vendas
+        </h2>
 
-        {profissionais.map((p, i) => (
-          <div key={i} style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            padding: 14,
-            background: '#f9fafb',
-            borderRadius: 12,
-            marginBottom: 10
-          }}>
-            <div>
-              <strong>{p.nome}</strong>
-              <div style={{ color: '#666', fontSize: 14 }}>
-                {p.equipe}
-              </div>
-            </div>
-
-            <strong>{p.vendas} vendas</strong>
-          </div>
-        ))}
+        <ResponsiveContainer width="100%" height={400}>
+          <BarChart data={ranking.slice(0, 10)}>
+            <XAxis dataKey="nome" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="vendas" />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </main>
+  )
+}
+
+function Card({ titulo, valor }) {
+  return (
+    <div
+      style={{
+        background: 'white',
+        padding: 20,
+        borderRadius: 20
+      }}
+    >
+      <p style={{ color: '#666' }}>
+        {titulo}
+      </p>
+
+      <h2 style={{ fontSize: 34 }}>
+        {valor}
+      </h2>
+    </div>
   )
 }
