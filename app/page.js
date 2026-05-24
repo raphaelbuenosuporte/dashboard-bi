@@ -30,139 +30,145 @@ export default function Home() {
       const profissionais = {}
 
       json.forEach((item) => {
-        const nome = item.PROFISSIONAL || 'SEM NOME'
+
+        // PEGA O NOME DA COLUNA DO EXCEL
+        const nome = item['Nome 1'] || 'SEM NOME'
+
+        // PEGA O VALOR VENDIDO
+        const valor = Number(item['Valor vendido']) || 1
 
         if (!profissionais[nome]) {
           profissionais[nome] = 0
         }
 
-        profissionais[nome] += 1
+        profissionais[nome] += valor
       })
 
-      const rankingArray = Object.entries(profissionais).map(
-        ([nome, vendas]) => ({
-          nome,
-          vendas
-        })
-      )
+      const rankingFinal = Object.keys(profissionais).map((nome) => ({
+        nome,
+        vendas: profissionais[nome]
+      }))
 
-      rankingArray.sort((a, b) => b.vendas - a.vendas)
-
-      setRanking(rankingArray)
+      setRanking(rankingFinal)
     }
 
     carregarExcel()
   }, [])
 
   return (
-    <main style={{ padding: 30, background: '#f3f4f6', minHeight: '100vh' }}>
-      <div
-        style={{
-          background: 'white',
-          padding: 24,
-          borderRadius: 20,
-          marginBottom: 20
-        }}
-      >
-        <h1 style={{ fontSize: 42 }}>
-          Dashboard BI Comercial
-        </h1>
-
-        <p style={{ color: '#666' }}>
-          Sistema inteligente conectado ao Excel
-        </p>
-      </div>
+    <main
+      style={{
+        padding: 20,
+        fontFamily: 'Arial',
+        background: '#0f172a',
+        minHeight: '100vh',
+        color: 'white'
+      }}
+    >
+      <h1 style={{ fontSize: 32, marginBottom: 30 }}>
+        Dashboard BI Comercial
+      </h1>
 
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))',
+          gridTemplateColumns: 'repeat(4,1fr)',
           gap: 20,
-          marginBottom: 20
+          marginBottom: 40
         }}
       >
-        <Card titulo="Total Registros" valor={dados.length} />
-        <Card titulo="Profissionais" valor={ranking.length} />
-        <Card titulo="Top Vendas" valor={ranking[0]?.vendas || 0} />
-        <Card
-          titulo="Eficiência"
-          valor={`${Math.round(
-            ((ranking[0]?.vendas || 0) / (dados.length || 1)) * 100
-          )}%`}
-        />
+        <div
+          style={{
+            background: '#1e293b',
+            padding: 20,
+            borderRadius: 10
+          }}
+        >
+          <h2>Total Registros</h2>
+          <p style={{ fontSize: 28 }}>{dados.length}</p>
+        </div>
+
+        <div
+          style={{
+            background: '#1e293b',
+            padding: 20,
+            borderRadius: 10
+          }}
+        >
+          <h2>Profissionais</h2>
+          <p style={{ fontSize: 28 }}>{ranking.length}</p>
+        </div>
+
+        <div
+          style={{
+            background: '#1e293b',
+            padding: 20,
+            borderRadius: 10
+          }}
+        >
+          <h2>Top Vendas</h2>
+          <p style={{ fontSize: 28 }}>
+            {ranking[0]?.vendas || 0}
+          </p>
+        </div>
+
+        <div
+          style={{
+            background: '#1e293b',
+            padding: 20,
+            borderRadius: 10
+          }}
+        >
+          <h2>Eficiência</h2>
+          <p style={{ fontSize: 28 }}>100%</p>
+        </div>
       </div>
 
       <div
         style={{
-          background: 'white',
-          padding: 24,
-          borderRadius: 20,
-          marginBottom: 20
+          background: '#1e293b',
+          padding: 20,
+          borderRadius: 10,
+          marginBottom: 30
         }}
       >
-        <h2 style={{ marginBottom: 20 }}>
-          Ranking de Profissionais
-        </h2>
+        <h2>Ranking de Profissionais</h2>
 
-        {ranking.slice(0, 10).map((p, i) => (
+        {ranking.map((item, index) => (
           <div
-            key={i}
+            key={index}
             style={{
               display: 'flex',
               justifyContent: 'space-between',
-              padding: 14,
-              background: '#f9fafb',
-              borderRadius: 12,
-              marginBottom: 10
+              padding: 10,
+              borderBottom: '1px solid #334155'
             }}
           >
-            <strong>{p.nome}</strong>
-
-            <strong>{p.vendas}</strong>
+            <span>{item.nome}</span>
+            <span>{item.vendas}</span>
           </div>
         ))}
       </div>
 
       <div
         style={{
-          background: 'white',
-          padding: 24,
-          borderRadius: 20
+          background: '#1e293b',
+          padding: 20,
+          borderRadius: 10,
+          height: 400
         }}
       >
-        <h2 style={{ marginBottom: 20 }}>
-          Gráfico de Vendas
-        </h2>
+        <h2>Gráfico de Vendas</h2>
 
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={ranking.slice(0, 10)}>
-            <XAxis dataKey="nome" />
-            <YAxis />
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={ranking}>
+            <XAxis dataKey="nome" stroke="#fff" />
+            <YAxis stroke="#fff" />
             <Tooltip />
-            <Bar dataKey="vendas" />
+            <Bar dataKey="vendas" fill="#3b82f6" />
           </BarChart>
         </ResponsiveContainer>
       </div>
     </main>
-  )
-}
-
-function Card({ titulo, valor }) {
-  return (
-    <div
-      style={{
-        background: 'white',
-        padding: 20,
-        borderRadius: 20
-      }}
-    >
-      <p style={{ color: '#666' }}>
-        {titulo}
-      </p>
-
-      <h2 style={{ fontSize: 34 }}>
-        {valor}
-      </h2>
-    </div>
   )
 }
